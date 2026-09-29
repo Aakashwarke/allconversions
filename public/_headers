@@ -1,0 +1,19 @@
+# Cloudflare Pages / Netlify headers.
+#
+# The vendor directory holds the pdf.js worker and the 31MB FFmpeg core. Both
+# are content-stable for a given release and are the single largest thing we
+# serve, so caching them hard is what keeps bandwidth costs near zero.
+
+/vendor/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Conversion happens client-side, so the security posture is mostly about not
+# letting anything else run on the page.
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()
