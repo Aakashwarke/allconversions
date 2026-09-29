@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BRAND } from "@/lib/brand";
-import { bundleAndDownload, convertFile, downloadResult, formatBytes, ConversionError, ConvertOptions, ConvertResult, MAX_FILE_BYTES } from "@/lib/convert";
+import { bundleAndDownload, convertFile, downloadResult, formatBytes, limitFor, ConversionError, ConvertOptions, ConvertResult, MAX_FILE_BYTES } from "@/lib/convert";
 import { CATEGORY_LABEL, resolveFormat } from "@/lib/formats";
 import { conversionFor, targetsFor } from "@/lib/matrix";
 import { extOf } from "@/lib/naming";
@@ -73,6 +73,10 @@ export function Converter({ lockedFrom, lockedTo }: Props) {
 
       if (!from) {
         reject(`We don't recognise .${extOf(file.name) || "?"} files yet.`);
+      } else if (to && file.size > limitFor(from, to)) {
+        reject(
+          `${formatBytes(file.size)} is over the ${formatBytes(limitFor(from, to))} limit for this conversion.`,
+        );
       } else if (file.size > MAX_FILE_BYTES) {
         reject(`${formatBytes(file.size)} is over the 2GB limit.`);
       } else if (lockedFrom && detected && detected.id !== lockedFrom) {
@@ -200,7 +204,7 @@ export function Converter({ lockedFrom, lockedTo }: Props) {
         </p>
         <p className="mt-1.5 text-sm text-muted">
           {lockedFrom && lockedTo
-            ? `${lockedFrom.toUpperCase()} files up to 2GB — converted on this device`
+            ? `${lockedFrom.toUpperCase()} files up to ${formatBytes(limitFor(lockedFrom, lockedTo))} — converted on this device`
             : "Any format below, up to 2GB each — converted on this device"}
         </p>
       </div>

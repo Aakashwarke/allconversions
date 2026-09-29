@@ -18,10 +18,6 @@ type FFmpegInstance = import("@ffmpeg/ffmpeg").FFmpeg;
 let instance: FFmpegInstance | null = null;
 let loading: Promise<FFmpegInstance> | null = null;
 
-export function isFfmpegLoaded(): boolean {
-  return instance !== null;
-}
-
 async function getFfmpeg(onProgress?: (f: number, label?: string) => void): Promise<FFmpegInstance> {
   if (instance) return instance;
   if (loading) return loading;
@@ -62,6 +58,7 @@ async function getFfmpeg(onProgress?: (f: number, label?: string) => void): Prom
 }
 
 const AUDIO = new Set(["mp3", "wav", "ogg", "opus", "m4a", "aac", "flac"]);
+
 
 /**
  * Encoder flags per target. Chosen for broad compatibility over raw speed:

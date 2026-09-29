@@ -10,6 +10,21 @@ export * from "./engines/types";
  */
 export const MAX_FILE_BYTES = 2 * 1024 * 1024 * 1024;
 
+/**
+ * Audio and video get a tighter cap.
+ *
+ * ffmpeg.wasm is a 32-bit build and keeps the input *and* the output in its
+ * virtual filesystem at once, on top of the codec's own working memory. Well
+ * below 2GB it dies inside wasm with an allocation failure that surfaces as an
+ * unhelpful crash, so refuse it up front with a reason the user can act on.
+ */
+export const MAX_MEDIA_BYTES = 900 * 1024 * 1024;
+
+/** The size ceiling that applies to a given conversion, in bytes. */
+export function limitFor(from: string, to: string): number {
+  return conversionFor(from, to)?.engine === "av" ? MAX_MEDIA_BYTES : MAX_FILE_BYTES;
+}
+
 type EngineFn = (req: ConvertRequest) => Promise<ConvertResult>;
 
 /**
@@ -43,6 +58,12 @@ export async function convertFile(req: ConvertRequest): Promise<ConvertResult> {
   }
   if (req.file.size === 0) {
     throw new ConversionError("That file is empty.");
+  }
+  if (conversion.engine === "av" && req.file.size > MAX_MEDIA_BYTES) {
+    throw new ConversionError(
+      "Audio and video are capped at 900MB.",
+      "The in-browser FFmpeg build is 32-bit and runs out of memory above this. Trimming the clip first is the usual fix.",
+    );
   }
   if (req.file.size > MAX_FILE_BYTES) {
     throw new ConversionError(
@@ -84,7 +105,9 @@ export function formatBytes(bytes: number): string {
   let value = bytes / 1024;
   let i = 0;
   while (value >= 1024 && i < units.length - 1) { value /= 1024; i++; }
-  return `${value.toFixed(value >= 10 || i === 0 ? 0 : 1)} ${units[i]}`;
+  // One decimal only where it adds information: 1.4 MB, but 2 GB and 900 MB.
+  const decimals = value >= 10 || i === 0 || Number.isInteger(value) ? 0 : 1;
+  return `${value.toFixed(decimals)} ${units[i]}`;
 }
 
 /** Zip several finished conversions into one download. */

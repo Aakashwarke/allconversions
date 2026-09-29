@@ -81,7 +81,7 @@ export const CATEGORY_LABEL: Record<Category, string> = {
 
 /** Common aliases users type or that files actually carry. */
 export const ALIASES: Record<string, string> = {
-  jpeg: "jpg", jpe: "jpg", tif: "tiff", htm: "html",
+  jpeg: "jpg", jpe: "jpg", htm: "html",
   yml: "yaml", markdown: "md", text: "txt", mpeg4: "mp4",
 };
 

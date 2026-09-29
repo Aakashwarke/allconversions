@@ -8,7 +8,7 @@ upload, no account, no watermark and no server to pay for.
 npm install
 npm run dev      # http://localhost:3000
 npm run build    # static export to out/
-npm test         # 32 end-to-end conversions in a real browser
+npm test         # 36 end-to-end checks in a real browser
 ```
 
 ---
@@ -114,7 +114,8 @@ untouched.
 
 `npm test` builds the site, serves the static export, and drives it in headless
 Chromium: real files in, real download out, asserting the **suggested filename**,
-the magic bytes and the decoded content of every result.
+the magic bytes and the decoded content of every result — plus four failure
+paths, which assert the error message and whether Retry is offered.
 
 This is not optional thoroughness. Every engine here depends on browser APIs —
 canvas, `DOMParser`, WebAssembly — that cannot be exercised from Node, and the
