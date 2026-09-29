@@ -169,3 +169,25 @@ export const POPULAR = CONVERSIONS.filter((c) => c.popularity > 0);
 export function titleOf(c: Conversion): string {
   return `${c.from.toUpperCase()} to ${c.to.toUpperCase()}`;
 }
+
+/** How each alias should be written in visible copy. */
+const ALIAS_LABEL: Record<string, string> = {
+  word: "Word", doc: "DOC", excel: "Excel",
+  jpeg: "JPEG", markdown: "Markdown", text: "Text",
+};
+
+/**
+ * Labels for the slug the visitor actually requested, not the canonical pair.
+ *
+ * An alias page only earns its keep if the phrase people searched for is the
+ * phrase on the page: /convert/pdf-to-word/ has to say "PDF to Word" in its
+ * title and heading, or it is just a duplicate of pdf-to-docx with a different
+ * URL. The canonical tag still points at the one canonical slug.
+ */
+export function labelsFor(slug: string, c: Conversion): { from: string; to: string } {
+  const [from, to] = slug.toLowerCase().split("-to-");
+  return {
+    from: ALIAS_LABEL[from] ?? c.from.toUpperCase(),
+    to: ALIAS_LABEL[to] ?? c.to.toUpperCase(),
+  };
+}

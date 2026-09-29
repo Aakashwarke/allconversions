@@ -5,7 +5,7 @@ import { Converter } from "@/components/Converter";
 import { ConversionGrid } from "@/components/ConversionGrid";
 import { BRAND } from "@/lib/brand";
 import { FORMAT_BY_ID } from "@/lib/formats";
-import { ALL_SLUGS, CONVERSIONS, findConversion, titleOf } from "@/lib/matrix";
+import { ALL_SLUGS, CONVERSIONS, findConversion, labelsFor } from "@/lib/matrix";
 import { SITE_URL } from "@/lib/site";
 
 // Every conversion pair — and every SEO alias of it — becomes its own static
@@ -24,7 +24,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const from = FORMAT_BY_ID.get(conversion.from)!;
   const to = FORMAT_BY_ID.get(conversion.to)!;
-  const title = `${titleOf(conversion)} — free, private, no upload`;
+  const label = labelsFor(slug, conversion);
+  const title = `${label.from} to ${label.to} — free, private, no upload`;
   const description = `Convert ${from.name} to ${to.name} free in your browser. No upload, no sign-up, no watermark. Files stay on your device and download as ${BRAND.filePrefix}${BRAND.fileSeparator}yourfile.${to.id}.`;
 
   return {
@@ -42,6 +43,9 @@ export default async function ConvertPage({ params }: Props) {
 
   const from = FORMAT_BY_ID.get(conversion.from)!;
   const to = FORMAT_BY_ID.get(conversion.to)!;
+  // Say it the way the visitor searched for it; canonical still points at the
+  // one canonical slug, so the two pages don't compete with each other.
+  const label = labelsFor(slug, conversion);
 
   const related = CONVERSIONS.filter(
     (c) => c.slug !== conversion.slug && (c.from === conversion.from || c.to === conversion.to),
@@ -49,7 +53,7 @@ export default async function ConvertPage({ params }: Props) {
 
   const faq = [
     {
-      q: `Is this ${titleOf(conversion)} converter really free?`,
+      q: `Is this ${label.from} to ${label.to} converter really free?`,
       a: "Yes, and without the usual catch. There is no file limit, no daily cap, no account and no watermark. Conversion happens on your own device, so it costs us nothing to let you run it as often as you like.",
     },
     {
@@ -76,7 +80,7 @@ export default async function ConvertPage({ params }: Props) {
     "@graph": [
       {
         "@type": "SoftwareApplication",
-        name: `${titleOf(conversion)} Converter`,
+        name: `${label.from} to ${label.to} Converter`,
         applicationCategory: "UtilitiesApplication",
         operatingSystem: "Any",
         offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
@@ -106,11 +110,11 @@ export default async function ConvertPage({ params }: Props) {
             <span className="mx-2">/</span>
             <Link href="/tools/" className="focus-ring rounded hover:text-[var(--text)]">Tools</Link>
             <span className="mx-2">/</span>
-            <span className="text-[var(--text)]">{titleOf(conversion)}</span>
+            <span className="text-[var(--text)]">{label.from} to {label.to}</span>
           </nav>
 
           <h1 className="mt-5 text-balance text-3xl font-bold tracking-tight sm:text-5xl">
-            Convert <span className="gradient-text">{from.id.toUpperCase()} to {to.id.toUpperCase()}</span>
+            Convert <span className="gradient-text">{label.from} to {label.to}</span>
           </h1>
           <p className="mt-4 text-pretty text-lg text-muted">
             Turn {from.name} files into {to.name} without uploading anything.
@@ -137,7 +141,7 @@ export default async function ConvertPage({ params }: Props) {
       </section>
 
       <section className="mx-auto max-w-3xl px-4 py-10">
-        <h2 className="text-2xl font-bold tracking-tight">How to convert {from.id.toUpperCase()} to {to.id.toUpperCase()}</h2>
+        <h2 className="text-2xl font-bold tracking-tight">How to convert {label.from} to {label.to}</h2>
         <ol className="mt-5 space-y-4">
           {[
             `Drop your ${from.name} onto the box above, or click to browse for it.`,

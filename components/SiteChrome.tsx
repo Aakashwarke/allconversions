@@ -8,15 +8,22 @@ export function Header() {
     <header className="sticky top-0 z-40 border-b border-hair backdrop-blur-xl"
             style={{ background: "color-mix(in srgb, var(--surface) 82%, transparent)" }}>
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-        <Link href="/" className="focus-ring flex items-center gap-2.5 rounded-lg">
+        <Link href="/" className="focus-ring flex shrink-0 items-center gap-2.5 rounded-lg">
           <Logo className="h-8 w-8" />
           <span className="text-[17px] font-semibold tracking-tight">{BRAND.name}</span>
         </Link>
         <nav className="flex items-center gap-1">
-          {NAV.map((item) => (
-            <Link key={item.href} href={item.href}
-                  className="focus-ring rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:text-[var(--text)]">
-              {item.label}
+          {NAV.map((item, i) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              // Narrow phones only have room for one link beside the wordmark;
+              // Pricing and Privacy are still reachable from the footer.
+              className={`focus-ring whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:text-[var(--text)] ${
+                i === 0 ? "" : "hidden sm:block"
+              }`}
+            >
+              {i === 0 ? <><span className="sm:hidden">Tools</span><span className="hidden sm:inline">{item.label}</span></> : item.label}
             </Link>
           ))}
         </nav>
