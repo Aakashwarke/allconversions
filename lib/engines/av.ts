@@ -14,9 +14,34 @@ import { ConvertRequest, ConvertResult, ConversionError, DEFAULTS } from "./type
 // someone else's CDN does.
 const CORE_BASE = "/vendor/ffmpeg";
 
+// Type-only, so nothing from the package reaches the bundle.
 type FFmpegInstance = import("@ffmpeg/ffmpeg").FFmpeg;
+type FFmpegUtil = typeof import("@ffmpeg/util");
+
 let instance: FFmpegInstance | null = null;
+let util: FFmpegUtil | null = null;
 let loading: Promise<FFmpegInstance> | null = null;
+
+/**
+ * Load the FFmpeg library from our own static assets instead of the bundle.
+ *
+ * @ffmpeg/ffmpeg's worker loads the core with `await import(coreURL)`, where
+ * coreURL is a blob URL built at runtime. Turbopack tries to resolve that
+ * expression at build time, cannot, and substitutes a stub that throws
+ * "Cannot find module as expression is too dynamic" — silently breaking every
+ * audio and video conversion. `turbopackIgnore` keeps the bundler out of it, so
+ * the browser resolves the blob URL natively at runtime.
+ *
+ * scripts/copy-assets.mjs puts these files in place; they are plain ESM with
+ * only relative imports, so they need no build step of their own.
+ */
+async function loadLibrary(): Promise<{ FFmpeg: new () => FFmpegInstance; util: FFmpegUtil }> {
+  const [ffmpegModule, utilModule] = await Promise.all([
+    import(/* turbopackIgnore: true */ /* webpackIgnore: true */ `${CORE_BASE}/lib/index.js`),
+    import(/* turbopackIgnore: true */ /* webpackIgnore: true */ `${CORE_BASE}/util/index.js`),
+  ]);
+  return { FFmpeg: ffmpegModule.FFmpeg, util: utilModule as FFmpegUtil };
+}
 
 async function getFfmpeg(onProgress?: (f: number, label?: string) => void): Promise<FFmpegInstance> {
   if (instance) return instance;
@@ -24,10 +49,9 @@ async function getFfmpeg(onProgress?: (f: number, label?: string) => void): Prom
 
   loading = (async () => {
     onProgress?.(0.02, "Loading converter (one-time, ~32MB)");
-    const [{ FFmpeg }, { toBlobURL }] = await Promise.all([
-      import("@ffmpeg/ffmpeg"),
-      import("@ffmpeg/util"),
-    ]);
+    const { FFmpeg, util: loaded } = await loadLibrary();
+    util = loaded;
+    const { toBlobURL } = loaded;
 
     const ff = new FFmpeg();
     try {
@@ -43,11 +67,11 @@ async function getFfmpeg(onProgress?: (f: number, label?: string) => void): Prom
         coreURL: await toBlobURL(`${CORE_BASE}/ffmpeg-core.js`, "text/javascript"),
         wasmURL: await toBlobURL(`${CORE_BASE}/ffmpeg-core.wasm`, "application/wasm"),
       });
-    } catch {
+    } catch (err) {
       loading = null;
       throw new ConversionError(
         "The media converter could not be loaded.",
-        "Check your connection and try again — it needs a one-time 32MB download.",
+        `${String((err as Error)?.message ?? err).slice(0, 200)}`,
       );
     }
     instance = ff;
@@ -111,7 +135,7 @@ export async function convertMedia(req: ConvertRequest): Promise<ConvertResult> 
   const quality = options.quality ?? DEFAULTS.quality;
 
   const ff = await getFfmpeg(onProgress);
-  const { fetchFile } = await import("@ffmpeg/util");
+  const { fetchFile } = util!;
 
   // FFmpeg's virtual filesystem needs real extensions to pick a demuxer.
   const input = `in.${from}`;

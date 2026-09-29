@@ -81,7 +81,16 @@ that converts a 40KB JPEG as heavy as the one that rebuilds a spreadsheet.
 
 Measured first load: **180 KB gzipped**, with none of those libraries in it.
 
-### Two things worth knowing
+### Three things worth knowing
+
+**`@ffmpeg/ffmpeg` cannot be bundled.** Its worker loads the core with
+`await import(coreURL)`, where `coreURL` is a blob URL built at runtime.
+Turbopack tries to resolve that expression at build time, fails, and substitutes
+a stub that throws *"Cannot find module as expression is too dynamic"* — which
+breaks all 107 audio and video conversions with no build error. The library and
+`@ffmpeg/util` are therefore copied into `public/vendor/ffmpeg/` as plain ESM
+and imported at runtime behind `turbopackIgnore`, so the browser resolves the
+blob URL natively.
 
 **The FFmpeg core must be the ESM build.** `@ffmpeg/ffmpeg` spawns a *module*
 worker, where `importScripts()` is unavailable, so it falls back to
@@ -119,9 +128,11 @@ paths, which assert the error message and whether Retry is offered.
 
 This is not optional thoroughness. Every engine here depends on browser APIs —
 canvas, `DOMParser`, WebAssembly — that cannot be exercised from Node, and the
-suite caught two bugs that would otherwise have shipped: the FFmpeg UMD/ESM
-mismatch above, and a pdf.js version that relied on `Map.getOrInsertComputed`,
-a proposal not yet available in Safari or older Chrome.
+suite caught three bugs that would otherwise have shipped: both FFmpeg loading
+failures above — the second of which only appears in the *bundled* app, so a
+test that imported the engine directly would have missed it — and a pdf.js
+version that relied on `Map.getOrInsertComputed`, a proposal not yet available
+in Safari or older Chrome.
 
 Media fixtures are generated on demand by FFmpeg's own `lavfi` inputs rather
 than committed as binaries. `SKIP_MEDIA=1 npm test` skips them for a fast run.

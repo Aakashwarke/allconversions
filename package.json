@@ -12,7 +12,8 @@
     "prebuild": "node scripts/copy-assets.mjs",
     "predev": "node scripts/copy-assets.mjs",
     "pretest": "next build",
-    "test": "node test/e2e.mjs"
+    "test": "node --import tsx test/naming.mjs && node test/e2e.mjs",
+    "test:fast": "node --import tsx test/naming.mjs && SKIP_MEDIA=1 node test/e2e.mjs"
   },
   "dependencies": {
     "@ffmpeg/core": "^0.12.10",
@@ -39,6 +40,7 @@
     "playwright": "^1.63.0",
     "postcss": "^8.5.3",
     "tailwindcss": "^4.3.3",
+    "tsx": "^4.23.15",
     "typescript": "^5.7.2"
   }
 }

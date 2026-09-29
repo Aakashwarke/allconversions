@@ -186,3 +186,7 @@ does not stack when you re-convert an already-converted file.
   optional server-side "high fidelity" path is the natural Pro upsell.
 - **Ad blockers** are common in a technical audience. This is a real dent in
   stream (a), and the main reason Pro and API matter.
+- **The media engine is a 31MB dependency with sharp edges.** Getting FFmpeg
+  loading correctly took three separate fixes (see the README), and none of
+  them produced a build error — only an end-to-end test against the real
+  deployed bundle caught them. Budget for that fragility when upgrading.
